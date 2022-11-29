@@ -2,6 +2,24 @@
 ENERGY-EFFICIENT MIXED-CRITICALITY SCHEDULER (EEMCS)
 ====================================================
 
+========================
+Structure of the program
+========================
+
+--> The driver code starts fetches the input task parameters and begins the simulation.
+--> The task preprocessing functions store the input parameters in a task structure array and sort it in decreasing order of criticality levels and utilizations (for offline task allocation).
+--> The offline task allocator then sequentially allocates low-period tasks and high-period tasks to cores using a criticality-aware modified bin packing scheme while ensuring EDF-VD schedulability in each core. The algorithm attempts to maximize the number of shutdownable cores by limiting all the low-period task allocations to a minimal required subset of all the available cores.
+--> The runtime scheduler loop then executes at every decision point for all cores. 
+	--> The scheduling decision points include: 1. Arrival 2. Current job termination 3. Criticality level change due to wcet budget overrun at current level 4. Job overrun 5. Core wakeup
+ 	--> If the decision point is due to a job arrival: ready jobs (active/discarded) are added to their allocated core's run queue (active) or discarded queue (discarded). If the core is not ACTIVE at the moment, add job to pending request queue.
+ 	--> If the decision point is due to job termination: 
+ 		--> If run queue is non-empty: the next active job is scheduled and the maximum procrastination interval (slack time) is computed for each core. If the discarded job queue is non-empty, the highest criticality discarded job's is accommodated in one of the cores if enough slack time is available.
+ 		--> If run queue is empty: the maximum procrastination interval (slack time) is computed for each core. If this interval exceeds the SHUTDOWN THRESHOLD, the core is SHUTDOWN and the counter for WAKEUP is initialized. Else, (i.e. if this interval is less than the predetermined SHUTDOWN THRESHOLD), DVFS optimizations are triggered (wip).
+ 	--> If the decision point is due to job exceeding its wcet budget: the criticality level of the system is updated / if it triggers a mode change, the criticality mode and virtual deadlines of all the jobs in the system are updated.
+ 	--> If the decision point is due to job overrun: the job is aborted, criticality level remains unchanged.
+ 	--> If the decision point is due to core waking up: the core status is reset and it execution is resumed by copying all jobs in the pending request queue to the core's run queue. 
+ 	--> At every decision point, the scheduler schedules the next job / updates currently executing job's parameters, handles preemptions for all the active cores.
+
 =============
 List of Files
 =============
@@ -59,24 +77,6 @@ How to Execute
 ==============
 
 --> Type ./test in the terminal to execute the program
-
-========================
-Structure of the program
-========================
-
---> The driver code starts fetches the input task parameters and begins the simulation.
---> The task preprocessing functions store the input parameters in a task structure array and sort it in decreasing order of criticality levels and utilizations (for offline task allocation).
---> The offline task allocator then sequentially allocates low-period tasks and high-period tasks to cores using a criticality-aware modified bin packing scheme while ensuring EDF-VD schedulability in each core. The algorithm attempts to maximize the number of shutdownable cores by limiting all the low-period task allocations to a minimal required subset of all the available cores.
---> The runtime scheduler loop then executes at every decision point for all cores. 
-	--> The scheduling decision points include: 1. Arrival 2. Current job termination 3. Criticality level change due to wcet budget overrun at current level 4. Job overrun 5. Core wakeup
- 	--> If the decision point is due to a job arrival: ready jobs (active/discarded) are added to their allocated core's run queue (active) or discarded queue (discarded). If the core is not ACTIVE at the moment, add job to pending request queue.
- 	--> If the decision point is due to job termination: 
- 		--> If run queue is non-empty: the next active job is scheduled and the maximum procrastination interval (slack time) is computed for each core. If the discarded job queue is non-empty, the highest criticality discarded job's is accommodated in one of the cores if enough slack time is available.
- 		--> If run queue is empty: the maximum procrastination interval (slack time) is computed for each core. If this interval exceeds the SHUTDOWN THRESHOLD, the core is SHUTDOWN and the counter for WAKEUP is initialized. Else, (i.e. if this interval is less than the predetermined SHUTDOWN THRESHOLD), DVFS optimizations are triggered (wip).
- 	--> If the decision point is due to job exceeding its wcet budget: the criticality level of the system is updated / if it triggers a mode change, the criticality mode and virtual deadlines of all the jobs in the system are updated.
- 	--> If the decision point is due to job overrun: the job is aborted, criticality level remains unchanged.
- 	--> If the decision point is due to core waking up: the core status is reset and it execution is resumed by copying all jobs in the pending request queue to the core's run queue. 
- 	--> At every decision point, the scheduler schedules the next job / updates currently executing job's parameters, handles preemptions for all the active cores.
 
 ==================
 Output of the Code
