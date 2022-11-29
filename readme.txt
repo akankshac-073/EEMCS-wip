@@ -2,9 +2,9 @@
 ENERGY-EFFICIENT MIXED-CRITICALITY SCHEDULER (EEMCS)
 ====================================================
 
-========================
-Structure of the program
-========================
+=========
+Algorithm
+=========
 
 --> The driver code starts fetches the input task parameters and begins the simulation.
 --> The task preprocessing functions store the input parameters in a task structure array and sort it in decreasing order of criticality levels and utilizations (for offline task allocation).
